@@ -1,0 +1,6 @@
+BasedOnStyle: Google
+Language: Cpp
+IndentWidth: 4
+UseTab: Never
+TabWidth: 4
+BreakBeforeBraces: Attach  # Keeps braces on the same line
