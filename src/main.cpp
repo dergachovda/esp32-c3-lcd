@@ -1,12 +1,15 @@
+#include <../lib/gpio_viewer.h>  // Must me the first include in your project
 #include <Arduino.h>
 #include <U8g2lib.h>
 #include <Wire.h>
+#include "_secrets.h"
 
 #define LED_PIN 8          // Internal LED pin (inverted)
 #define BOOT_BUTTON_PIN 9  // BOOT button pin
 
 // Initialize U8g2 for the OLED display (I2C pins 6 and 5)
 U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE, 6, 5);
+GPIOViewer gpioViewer;
 
 int width = 72;    // Width of the screen
 int height = 40;   // Height of the screen
@@ -25,6 +28,9 @@ void displayText(const char *text);
 void displayPressBtn();
 
 void setup() {
+    gpioViewer.connectToWifi(WIFI_SSID, WIFI_PASS);
+    gpioViewer.setSamplingInterval(125);
+
     // Initialize digital pin LED_PIN as an output
     pinMode(LED_PIN, OUTPUT);
 
@@ -43,6 +49,7 @@ void setup() {
     displayText("        Hi!");   // Display initial message
     delay(1000);                  // Delay for 1 second
     displayPressBtn();            // Display "Press btn..." message
+    gpioViewer.begin();
 }
 
 void loop() {
@@ -120,9 +127,8 @@ void displayPressBtn() {
     u8g2.drawTriangle(xOffset + width - 10, yOffset + 5, xOffset + width - 5,
                       yOffset + 2, xOffset + width - 3, yOffset + 8);
     // droaw a line to represent the button
-    u8g2.drawLine(
-        xOffset + width - 5, yOffset + 2,
-        xOffset + width - 12,  yOffset + 12);
+    u8g2.drawLine(xOffset + width - 5, yOffset + 2, xOffset + width - 12,
+                  yOffset + 12);
 
     // Display the text
     // print the text in a middle of the screen and scroll it
