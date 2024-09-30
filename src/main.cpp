@@ -1,4 +1,4 @@
-#include <../lib/gpio_viewer.h>  // Must me the first include in your project
+#include <gpio_viewer.h>  // Must me the first include in your project
 #include <Arduino.h>
 #include <U8g2lib.h>
 #include <Wire.h>

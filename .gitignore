@@ -39,3 +39,6 @@ __pycache__/
 
 # Unit test output
 /test/.pio/
+
+# secret
+src/_secrets.h
