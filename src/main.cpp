@@ -33,38 +33,30 @@ void processBootBtn();
 void updateDisplay(int count);
 
 void setup() {
+    delay(1000);  // Delay for 1 second to allow the serial monitor to connect
+    Serial.begin(115200);
+
     gpioViewer.connectToWifi(WIFI_SSID, WIFI_PASS);
     gpioViewer.setSamplingInterval(125);
 
-    // Initialize digital pin LED_PIN as an output
     pinMode(LED_PIN, OUTPUT);
-
-    // Initialize BOOT button pin as input with internal pull-up
     pinMode(BOOT_BUTTON_PIN, INPUT_PULLUP);
 
-    // Start Serial communication
-    initSerial();
+    digitalWrite(LED_PIN, HIGH);  // HIGH means LED is off due to inverted logic
 
     // Initialize the OLED display
     initDisplay();
 
     // Initialize GPIO Viewer
     gpioViewer.begin();
-}
 
-void initSerial() {
-    Serial.begin(115200);
-    while (!Serial) {
-        delay(10);
-    }
+    Serial.println("Setup complete.");
 }
 
 void initDisplay() {
     u8g2.begin();
     u8g2.setContrast(255);  // Set contrast to maximum
-
     u8g2.setBusClock(400000);     // Set I2C bus clock to 400kHz
-    digitalWrite(LED_PIN, HIGH);  // HIGH means LED is off due to inverted logic
     displayText("        Hi!");   // Display initial message
     delay(1000);                  // Delay for 1 second
     displayPressBtn();            // Display "Press btn..." message
