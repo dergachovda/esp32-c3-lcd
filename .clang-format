@@ -4,3 +4,4 @@ IndentWidth: 4
 UseTab: Never
 TabWidth: 4
 BreakBeforeBraces: Attach  # Keeps braces on the same line
+SortIncludes: false  # Keeps includes in the order they were written

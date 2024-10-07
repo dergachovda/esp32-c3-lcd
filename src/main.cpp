@@ -2,6 +2,7 @@
 #include <Arduino.h>
 #include <U8g2lib.h>
 #include <Wire.h>
+
 #include "_secrets.h"
 
 #define LED_PIN 8          // Internal LED pin (inverted)
@@ -23,9 +24,13 @@ unsigned long lastDebounceTime = 0;  // Debounce timer
 unsigned long debounceDelay = 50;    // Debounce delay (in milliseconds)
 int pressCount = 0;                  // Track the number of button presses
 
-void updateDisplay();
+void initDisplay();
+void initSerial();
 void displayText(const char *text);
 void displayPressBtn();
+void controlTaskCallback(void *pvParameters);
+void processBootBtn();
+void updateDisplay(int count);
 
 void setup() {
     gpioViewer.connectToWifi(WIFI_SSID, WIFI_PASS);
@@ -37,22 +42,40 @@ void setup() {
     // Initialize BOOT button pin as input with internal pull-up
     pinMode(BOOT_BUTTON_PIN, INPUT_PULLUP);
 
-    // Start serial communication for logging
-    Serial.begin(115200);
-    Serial.println("Setup Complete.");
+    // Start Serial communication
+    initSerial();
 
     // Initialize the OLED display
+    initDisplay();
+
+    // Initialize GPIO Viewer
+    gpioViewer.begin();
+}
+
+void initSerial() {
+    Serial.begin(115200);
+    while (!Serial) {
+        delay(10);
+    }
+}
+
+void initDisplay() {
     u8g2.begin();
-    u8g2.setContrast(255);        // Set contrast to maximum
+    u8g2.setContrast(255);  // Set contrast to maximum
+
     u8g2.setBusClock(400000);     // Set I2C bus clock to 400kHz
     digitalWrite(LED_PIN, HIGH);  // HIGH means LED is off due to inverted logic
     displayText("        Hi!");   // Display initial message
     delay(1000);                  // Delay for 1 second
     displayPressBtn();            // Display "Press btn..." message
-    gpioViewer.begin();
 }
 
-void loop() {
+void loop() { 
+    processBootBtn(); 
+    updateDisplay(pressCount);
+}
+
+void processBootBtn() {
     // Read the current state of the button (LOW when pressed)
     int reading = digitalRead(BOOT_BUTTON_PIN);
 
@@ -87,8 +110,6 @@ void loop() {
             Serial.print("LED is now ");
             Serial.println(ledState ? "ON" : "OFF");
 
-            // Update the OLED display with the new press count and LED state
-            updateDisplay();
         }
 
         // Update the button state
@@ -138,7 +159,14 @@ void displayPressBtn() {
     u8g2.sendBuffer();  // Transfer internal memory to the display
 }
 
-void updateDisplay() {
+static int prevCount = 0;
+void updateDisplay(int count) {
+    if (prevCount == count) {
+        // no need to update the display
+        return;
+    } 
+    prevCount = count;
+
     u8g2.clearBuffer();                  // Clear the internal buffer
     u8g2.setFont(u8g2_font_ncenB08_tr);  // Set font
 
@@ -150,7 +178,7 @@ void updateDisplay() {
     u8g2.print("Press Count:");
 
     u8g2.setCursor(xOffset + 2, yOffset + 23);  // Set position for text
-    u8g2.printf("      %d", pressCount);
+    u8g2.printf("      %d", prevCount);
     // Display the LED state
     u8g2.setCursor(xOffset + 2, yOffset + 36);  // Set position for LED state
     u8g2.printf("LED is %s", ledState ? "ON" : "OFF");  // Print LED state
