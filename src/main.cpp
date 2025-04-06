@@ -2,8 +2,10 @@
 #include <Arduino.h>
 #include <U8g2lib.h>
 #include <Wire.h>
+#include <xboxControllerClient/XboxControllerClient.h>
 
 #include "_secrets.h"
+#include "_controllerConfig.h"
 
 #define LED_PIN 8          // Internal LED pin (inverted)
 #define BOOT_BUTTON_PIN 9  // BOOT button pin
@@ -11,6 +13,9 @@
 // Initialize U8g2 for the OLED display (I2C pins 6 and 5)
 U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE, 6, 5);
 GPIOViewer gpioViewer;
+
+// XboxControllerClient xboxControllerClient(CONTROLLER_MAC_ADDRESS);  // Xbox controller client
+XboxControllerClient xboxControllerClient;  // Xbox controller client
 
 int width = 72;    // Width of the screen
 int height = 40;   // Height of the screen
@@ -31,6 +36,9 @@ void displayPressBtn();
 void controlTaskCallback(void *pvParameters);
 void processBootBtn();
 void updateDisplay(int count);
+void onBoardLed_ON();
+void onBoardLed_OFF();
+void processXboxController();
 
 void setup() {
     delay(1000);  // Delay for 1 second to allow the serial monitor to connect
@@ -50,6 +58,8 @@ void setup() {
     // Initialize GPIO Viewer
     gpioViewer.begin();
 
+    xboxControllerClient.begin();  // Initialize Xbox controller client
+
     Serial.println("Setup complete.");
 }
 
@@ -65,6 +75,23 @@ void initDisplay() {
 void loop() { 
     processBootBtn(); 
     updateDisplay(pressCount);
+    processXboxController();
+    delay(100);  // Delay for 100 milliseconds
+}
+
+void processXboxController() {
+    // Update the Xbox controller client
+    xboxControllerClient.update();
+
+    // Check if the controller is connected
+    if (xboxControllerClient.isConnected()) {
+        onBoardLed_ON();  // Turn on the onboard LED
+        // Display the controller address
+        Serial.print("Controller Address: ");
+        Serial.println(xboxControllerClient.getDeviceAddress());
+    } else {
+        onBoardLed_OFF();  // Turn off the onboard LED
+    }
 }
 
 void processBootBtn() {
@@ -89,18 +116,18 @@ void processBootBtn() {
             Serial.print("Button Pressed. Press Count: ");
             Serial.println(pressCount);
 
-            // Toggle the LED state
-            ledState = !ledState;
+            // // Toggle the LED state
+            // ledState = !ledState;
 
-            // Update the LED
-            digitalWrite(
-                LED_PIN,
-                ledState ? LOW
-                         : HIGH);  // LOW turns the LED on, HIGH turns it off
+            // // Update the LED
+            // digitalWrite(
+            //     LED_PIN,
+            //     ledState ? LOW
+            //              : HIGH);  // LOW turns the LED on, HIGH turns it off
 
-            // Log the LED state
-            Serial.print("LED is now ");
-            Serial.println(ledState ? "ON" : "OFF");
+            // // Log the LED state
+            // Serial.print("LED is now ");
+            // Serial.println(ledState ? "ON" : "OFF");
 
         }
 
@@ -171,9 +198,16 @@ void updateDisplay(int count) {
 
     u8g2.setCursor(xOffset + 2, yOffset + 23);  // Set position for text
     u8g2.printf("      %d", prevCount);
-    // Display the LED state
-    u8g2.setCursor(xOffset + 2, yOffset + 36);  // Set position for LED state
-    u8g2.printf("LED is %s", ledState ? "ON" : "OFF");  // Print LED state
+    // // Display the LED state
+    // u8g2.setCursor(xOffset + 2, yOffset + 36);  // Set position for LED state
+    // u8g2.printf("LED is %s", ledState ? "ON" : "OFF");  // Print LED state
 
     u8g2.sendBuffer();  // Transfer internal memory to the display
+}
+
+void onBoardLed_ON() {
+    digitalWrite(LED_PIN, LOW);  // Turn on the LED
+}
+void onBoardLed_OFF() {
+    digitalWrite(LED_PIN, HIGH);  // Turn off the LED
 }

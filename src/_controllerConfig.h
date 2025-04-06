@@ -1,0 +1,1 @@
+#define CONTROLLER_MAC_ADDRESS "00:00:00:00:00:00"  // Replace with your controller's MAC address
