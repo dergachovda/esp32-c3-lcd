@@ -43,6 +43,7 @@ void processBootBtn();
 void updateDisplay(int count);
 void processXboxController();
 void controllerLog();
+void processLeds();
 
 void setup() {
     delay(1000);  // Delay for 1 second to allow the serial monitor to connect
@@ -73,11 +74,14 @@ void setup() {
 void loop() { 
     processBootBtn(); 
     updateDisplay(pressCount);
-    xboxControllerClient.onLoop();
     processXboxController();
-    delay(100);  // Delay for 100 milliseconds
+    processLeds();
 }
 
+void processLeds() {
+    onBoardLed.loop();  // Update the onboard LED state
+    led.loop();         // Update the LED state
+}
 
 void initDisplay() {
     u8g2.begin();
@@ -89,6 +93,7 @@ void initDisplay() {
 }
 
 void processXboxController() {
+    xboxControllerClient.onLoop();
     controllerLog();
     // Check if the controller is connected
     if (xboxControllerClient.isConnected()) {
