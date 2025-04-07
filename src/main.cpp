@@ -3,12 +3,14 @@
 #include <U8g2lib.h>
 #include <Wire.h>
 #include <xboxControllerClient/XboxControllerClient.h>
+#include "led/Led.h"
 
 #include "_secrets.h"
 #include "_controllerConfig.h"
 
-#define LED_PIN 8          // Internal LED pin (inverted)
-#define BOOT_BUTTON_PIN 9  // BOOT button pin
+#define BOARD_LED_PIN 8             // Internal LED pin (inverted)
+#define BOOT_BUTTON_PIN 9           // BOOT button pin
+#define LED_PIN 10                  // LED pin
 
 // Initialize U8g2 for the OLED display (I2C pins 6 and 5)
 U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE, 6, 5);
@@ -17,12 +19,14 @@ GPIOViewer gpioViewer;
 // XboxControllerClient xboxControllerClient(CONTROLLER_MAC_ADDRESS);  // Xbox controller client
 XboxControllerClient xboxControllerClient;  // Xbox controller client
 
+Led led;  // LED object
+Led onBoardLed;  // Onboard LED object
+
 int width = 72;    // Width of the screen
 int height = 40;   // Height of the screen
 int xOffset = 30;  // Horizontal offset for centering the display
 int yOffset = 12;  // Vertical offset for centering the display
 
-bool ledState = false;               // Tracks the state of the LED (on/off)
 bool buttonState = HIGH;             // Tracks the current state of the button
 bool lastButtonState = HIGH;         // Tracks the previous state of the button
 unsigned long lastDebounceTime = 0;  // Debounce timer
@@ -30,15 +34,15 @@ unsigned long debounceDelay = 50;    // Debounce delay (in milliseconds)
 int pressCount = 0;                  // Track the number of button presses
 
 void initDisplay();
+void controllerLog();
 void initSerial();
 void displayText(const char *text);
 void displayPressBtn();
 void controlTaskCallback(void *pvParameters);
 void processBootBtn();
 void updateDisplay(int count);
-void onBoardLed_ON();
-void onBoardLed_OFF();
 void processXboxController();
+void controllerLog();
 
 void setup() {
     delay(1000);  // Delay for 1 second to allow the serial monitor to connect
@@ -47,10 +51,12 @@ void setup() {
     gpioViewer.connectToWifi(WIFI_SSID, WIFI_PASS);
     gpioViewer.setSamplingInterval(125);
 
-    pinMode(LED_PIN, OUTPUT);
     pinMode(BOOT_BUTTON_PIN, INPUT_PULLUP);
 
-    digitalWrite(LED_PIN, HIGH);  // HIGH means LED is off due to inverted logic
+    onBoardLed.setPin(BOARD_LED_PIN);  // Set the onboard LED pin
+    onBoardLed.blink(500);  // Blink the onboard LED every 300 milliseconds
+
+    led.setPin(LED_PIN);  // Set the LED pin
 
     // Initialize the OLED display
     initDisplay();
@@ -63,6 +69,16 @@ void setup() {
     Serial.println("Setup complete.");
 }
 
+
+void loop() { 
+    processBootBtn(); 
+    updateDisplay(pressCount);
+    xboxControllerClient.onLoop();
+    processXboxController();
+    delay(100);  // Delay for 100 milliseconds
+}
+
+
 void initDisplay() {
     u8g2.begin();
     u8g2.setContrast(255);  // Set contrast to maximum
@@ -72,25 +88,28 @@ void initDisplay() {
     displayPressBtn();            // Display "Press btn..." message
 }
 
-void loop() { 
-    processBootBtn(); 
-    updateDisplay(pressCount);
-    processXboxController();
-    delay(100);  // Delay for 100 milliseconds
-}
-
 void processXboxController() {
-    // Update the Xbox controller client
-    xboxControllerClient.update();
-
+    controllerLog();
     // Check if the controller is connected
     if (xboxControllerClient.isConnected()) {
-        onBoardLed_ON();  // Turn on the onboard LED
-        // Display the controller address
-        Serial.print("Controller Address: ");
-        Serial.println(xboxControllerClient.getDeviceAddress());
+        onBoardLed.on();  // Turn on the onboard LED
+        if (xboxControllerClient.getButtonStatus(XboxControllerClient::BUTTON_A)) {
+            led.on();  // Turn on the LED if button A is pressed
+        } 
+        if (xboxControllerClient.getButtonStatus(XboxControllerClient::BUTTON_B)) {
+            led.off();  // Turn off the LED if button A is not pressed
+        }
     } else {
-        onBoardLed_OFF();  // Turn off the onboard LED
+        onBoardLed.blink(300);  // Blink the onboard LED
+    }
+}
+
+void controllerLog() {
+    static unsigned long controllerLastUpdate = 0;
+    unsigned long controllerCurrentMillis = millis();
+    if (controllerCurrentMillis - controllerLastUpdate >= 1000) {
+        controllerLastUpdate = controllerCurrentMillis;
+        xboxControllerClient.printState();  // Print the state of the controller
     }
 }
 
@@ -203,11 +222,4 @@ void updateDisplay(int count) {
     // u8g2.printf("LED is %s", ledState ? "ON" : "OFF");  // Print LED state
 
     u8g2.sendBuffer();  // Transfer internal memory to the display
-}
-
-void onBoardLed_ON() {
-    digitalWrite(LED_PIN, LOW);  // Turn on the LED
-}
-void onBoardLed_OFF() {
-    digitalWrite(LED_PIN, HIGH);  // Turn off the LED
 }
