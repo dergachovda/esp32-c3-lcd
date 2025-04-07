@@ -10,10 +10,12 @@ private:
     unsigned long previousMillis;
     unsigned long blinkInterval;
     bool isBlinking;
+    bool isLogicInverted; // Flag to indicate if the LED logic is inverted
 
 public:
     Led();
     void setPin(int pin);
+    void setInvertedLogic(bool inverted);
     void on();
     void off();
     void blink(unsigned long interval);

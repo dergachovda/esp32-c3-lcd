@@ -19,6 +19,7 @@ bool XboxControllerClient::isConnected() {
         // Check if the controller is waiting for the first notification
         if (xboxController.isWaitingForFirstNotification()) {
             Serial.println("Waiting for first notification...");
+            delay(1000); // Wait for a second before checking again
         } else {
             return true;
         }

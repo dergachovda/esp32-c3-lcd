@@ -55,6 +55,7 @@ void setup() {
     pinMode(BOOT_BUTTON_PIN, INPUT_PULLUP);
 
     onBoardLed.setPin(BOARD_LED_PIN);  // Set the onboard LED pin
+    onBoardLed.setInvertedLogic(true);
     onBoardLed.blink(500);  // Blink the onboard LED every 300 milliseconds
 
     led.setPin(LED_PIN);  // Set the LED pin
@@ -103,6 +104,9 @@ void processXboxController() {
         } 
         if (xboxControllerClient.getButtonStatus(XboxControllerClient::BUTTON_B)) {
             led.off();  // Turn off the LED if button A is not pressed
+        }
+        if (xboxControllerClient.getButtonStatus(XboxControllerClient::BUTTON_Y)) {
+            led.blink(300);  // Blink the LED if button LB is pressed
         }
     } else {
         onBoardLed.blink(300);  // Blink the onboard LED

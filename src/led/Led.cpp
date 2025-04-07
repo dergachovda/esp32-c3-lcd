@@ -11,13 +11,13 @@ void Led::setPin(int pin) {
 void Led::on() {
     isBlinking = false;
     state = true;
-    digitalWrite(pin, LOW); // LOW turns the LED on (inverted logic)
+    digitalWrite(pin, isLogicInverted ? LOW : HIGH);
 }
 
 void Led::off() {
     isBlinking = false;
     state = false;
-    digitalWrite(pin, HIGH); // HIGH turns the LED off (inverted logic)
+    digitalWrite(pin, isLogicInverted ? HIGH : LOW);
 }
 
 void Led::blink(unsigned long interval) {
@@ -30,8 +30,15 @@ void Led::loop() {
         unsigned long currentMillis = millis();
         if (currentMillis - previousMillis >= blinkInterval) {
             previousMillis = currentMillis;
-            state = !state;
-            digitalWrite(pin, state ? LOW : HIGH); // Toggle LED state
+            if (state) {
+                off(); // Turn off the LED
+            } else {
+                on(); // Turn on the LED
+            }
         }
     }
+}
+
+void Led::setInvertedLogic(bool inverted) {
+    isLogicInverted = inverted;
 }
